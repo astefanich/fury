@@ -21,6 +21,7 @@ import probably.TestApp
 object Tests {
   private val testSuites = List[TestApp](
       DirectedGraphTest,
+      RepoTest
   )
 
   def main(args: Array[String]): Unit = testSuites.map(_.execute()).find(_.value != 0).foreach(_.exit())

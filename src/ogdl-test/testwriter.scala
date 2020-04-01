@@ -27,6 +27,8 @@ object OgdlWriterTest extends TestApp {
 
   private case class Foo(bar: String, baz: Int)
 
+  private implicit val ord: Ordering[Foo] = Ordering[Int].on[Foo](_.baz)
+
   override def tests(): Unit = {
     test("string") {
       val input: String = "Hello World!"
@@ -41,7 +43,6 @@ object OgdlWriterTest extends TestApp {
       ("baz",Ogdl(Vector(("2", empty))))
     ))))
 
-    //Ogdl(Vector((::,Ogdl(Vector((head,Ogdl(Vector((3,Ogdl(Vector()))))), (tl$access$1,Ogdl(Vector((::,Ogdl(Vector((head,Ogdl(Vector((2,Ogdl(Vector()))))), (tl$access$1,Ogdl(Vector((::,Ogdl(Vector((head,Ogdl(Vector((1,Ogdl(Vector()))))), (tl$access$1,Ogdl(Vector((Nil,Ogdl(Vector()))))))))))))))))))))))
     test("list of strings") {
       val input = List("3", "2", "1")
       Try{Ogdl(input)}
@@ -72,5 +73,15 @@ object OgdlWriterTest extends TestApp {
       val input: SortedSet[Int] = TreeSet(1, 2, 3)
       Try{Ogdl(input)}
     }.assert(_ == Success(Ogdl(Vector(("1",Ogdl(Vector(("1",empty)))), ("2",Ogdl(Vector(("2",empty)))), ("3",Ogdl(Vector(("3",empty))))))))
+
+    test("sorted set of case classes") {
+      implicit val index: Index[Foo] = FieldIndex("bar")
+      val input: SortedSet[Foo] = TreeSet(Foo(bar = "A", baz = 2), Foo(bar = "B", baz = 3), Foo(bar = "B", baz = 1))
+      Try{Ogdl(input)}
+    }.assert(_ == Success(Ogdl(Vector(
+      ("B",Ogdl(Vector(("baz",Ogdl(Vector(("1",empty))))))),
+      ("A",Ogdl(Vector(("baz",Ogdl(Vector(("2",empty))))))),
+      ("B",Ogdl(Vector(("baz",Ogdl(Vector(("3",empty)))))))
+    ))))
   }
 }

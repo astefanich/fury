@@ -27,6 +27,8 @@ object OgdlReaderTest extends TestApp {
 
   private case class Foo(bar: String, baz: Int)
 
+  private implicit val ord: Ordering[Foo] = Ordering[Int].on[Foo](_.baz)
+
   override def tests(): Unit = {
     test("string") {
       val ogdl = Ogdl(Vector(("Hello World!", empty)))
@@ -69,6 +71,16 @@ object OgdlReaderTest extends TestApp {
       )
       Try(implicitly[OgdlReader[List[String]]].read(ogdl))
     }.assert(_ == Success(List("3", "2", "1")))
+
+    test("sorted set of case classes") {
+      implicit val index: Index[Foo] = FieldIndex("bar")
+      val ogdl = Ogdl(Vector(
+        ("B",Ogdl(Vector(("baz",Ogdl(Vector(("1",empty))))))),
+        ("A",Ogdl(Vector(("baz",Ogdl(Vector(("2",empty))))))),
+        ("B",Ogdl(Vector(("baz",Ogdl(Vector(("3",empty)))))))
+      ))
+      Try(implicitly[OgdlReader[SortedSet[Foo]]].read(ogdl))
+    }.assert(_ == Success(TreeSet(Foo(bar = "B", baz = 1), Foo(bar = "A", baz = 2), Foo(bar = "B", baz = 3))))
 
   }
 }

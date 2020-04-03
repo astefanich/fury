@@ -49,26 +49,7 @@ object OgdlReaderTest extends TestApp {
     }.assert(_ == Success(TreeSet(1, 2, 3)))
 
     test("list of strings") {
-      val ogdl = Ogdl(
-        Vector(
-          ("::",Ogdl(Vector(
-            ("head",Ogdl(Vector(("3",empty)))),
-            ("tl$access$1",Ogdl(Vector(
-              ("::",Ogdl(Vector(
-                ("head",Ogdl(Vector(("2",empty)))),
-                ("tl$access$1",Ogdl(Vector(
-                  ("::",Ogdl(Vector(
-                    ("head",Ogdl(Vector(("1",empty)))),
-                    ("tl$access$1",Ogdl(Vector(
-                      ("Nil",empty)
-                    )
-                    )))
-                  )))
-                )))
-              )))
-            )))
-          )))
-      )
+      val ogdl = Ogdl(Vector(("3",Ogdl(Vector(("3",empty)))), ("2",Ogdl(Vector(("2",empty)))), ("1",Ogdl(Vector(("1",empty))))))
       Try(implicitly[OgdlReader[List[String]]].read(ogdl))
     }.assert(_ == Success(List("3", "2", "1")))
 

@@ -99,5 +99,5 @@ object Index {
   implicit val int = SelfIndexed[Int]
   implicit val long = SelfIndexed[Long]
   implicit val boolean = SelfIndexed[Boolean]
-  implicit def index[T <: AnyRef: OgdlWriter]: FieldIndex[T] = FieldIndex[T]("id")
+  implicit def index[T <: {val id: AnyRef}: OgdlWriter]: FieldIndex[T] = FieldIndex[T]("id")
 }

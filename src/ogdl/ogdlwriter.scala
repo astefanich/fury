@@ -70,7 +70,7 @@ object OgdlWriter {
       else coll.to[Vector].map(implicitly[Index[T]].foobar)
     }
 
-  implicit def treeSet[T: OgdlWriter: Index]: OgdlWriter[SortedSet[T]] = coll =>
+  implicit def treeSet[T: OgdlWriter: Index, X[T] <: SortedSet[T]]: OgdlWriter[X[T]] = coll =>
     Ogdl {
       if(coll.isEmpty) Vector(("", Ogdl(Vector())))
       else coll.to[Vector].map(implicitly[Index[T]].foobar)

@@ -25,15 +25,21 @@ import scala.util.{Try, Success}
 object OgdlReaderTest extends TestApp {
   private[this] val empty = Ogdl(Vector())
 
-  private case class Foo(bar: String, baz: Int)
+  private[this] case class Foo(bar: String, baz: Int)
+  private[this] implicit val ord: Ordering[Foo] = Ordering[Int].on[Foo](_.baz)
 
-  private implicit val ord: Ordering[Foo] = Ordering[Int].on[Foo](_.baz)
+  private[this] case class Quux(handle: String, data: SortedSet[String])
 
   override def tests(): Unit = {
     test("string") {
       val ogdl = Ogdl(Vector(("Hello World!", empty)))
       Try(implicitly[OgdlReader[String]].read(ogdl))
     }.assert(_ == Success("Hello World!"))
+
+    test("option") {
+      val ogdl = Ogdl(Vector(("Some",Ogdl(Vector(("false",empty))))))
+      Try(implicitly[OgdlReader[Option[Boolean]]].read(ogdl))
+    }.assert(_ == Success(Some(false)))
 
     test("case class") {
       val ogdl = Ogdl(Vector(
@@ -43,15 +49,15 @@ object OgdlReaderTest extends TestApp {
       Try(implicitly[OgdlReader[Foo]].read(ogdl))
     }.assert(_ == Success( Foo(bar = "1", baz = 2)))
 
-    test("sorted set of integers") {
-      val ogdl = Ogdl(Vector(("1",Ogdl(Vector(("1",empty)))), ("2",Ogdl(Vector(("2",empty)))), ("3",Ogdl(Vector(("3",empty))))))
-      Try(implicitly[OgdlReader[SortedSet[Int]]].read(ogdl))
-    }.assert(_ == Success(TreeSet(1, 2, 3)))
-
     test("list of strings") {
       val ogdl = Ogdl(Vector(("3",Ogdl(Vector(("3",empty)))), ("2",Ogdl(Vector(("2",empty)))), ("1",Ogdl(Vector(("1",empty))))))
       Try(implicitly[OgdlReader[List[String]]].read(ogdl))
     }.assert(_ == Success(List("3", "2", "1")))
+
+    test("sorted set of integers") {
+      val ogdl = Ogdl(Vector(("1",Ogdl(Vector(("1",empty)))), ("2",Ogdl(Vector(("2",empty)))), ("3",Ogdl(Vector(("3",empty))))))
+      Try(implicitly[OgdlReader[SortedSet[Int]]].read(ogdl))
+    }.assert(_ == Success(TreeSet(1, 2, 3)))
 
     test("sorted set of case classes") {
       implicit val index: Index[Foo] = FieldIndex("bar")
@@ -62,6 +68,19 @@ object OgdlReaderTest extends TestApp {
       ))
       Try(implicitly[OgdlReader[SortedSet[Foo]]].read(ogdl))
     }.assert(_ == Success(TreeSet(Foo(bar = "B", baz = 1), Foo(bar = "A", baz = 2), Foo(bar = "B", baz = 3))))
+
+    test("case class with a sorted set") {
+      implicit val index: Index[Quux] = FieldIndex("handle")
+      val ogdl = Ogdl(Vector(
+        ("handle",Ogdl(Vector(("Q",empty)))),
+        ("data",Ogdl(Vector(
+          ("A",Ogdl(Vector(("A",empty)))),
+          ("B",Ogdl(Vector(("B",empty)))),
+          ("C",Ogdl(Vector(("C",empty))))
+        )))
+      ))
+      Try(implicitly[OgdlReader[Quux]].read(ogdl))
+    }.assert(_ == Success(Quux("Q", TreeSet("A", "B", "C"))))
 
   }
 }

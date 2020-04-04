@@ -20,7 +20,8 @@ import probably.TestApp
 
 object Tests {
   private val testSuites = List[TestApp](
-      DirectedGraphTest,
+    DirectedGraphTest,
+    OgdlTest
   )
 
   def main(args: Array[String]): Unit = testSuites.map(_.execute()).find(_.value != 0).foreach(_.exit())

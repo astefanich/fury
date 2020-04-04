@@ -25,16 +25,39 @@ import scala.util.{Try, Success}
 object OgdlWriterTest extends TestApp {
   private[this] val empty = Ogdl(Vector())
 
-  private case class Foo(bar: String, baz: Int)
-  private implicit val ord: Ordering[Foo] = Ordering[Int].on[Foo](_.baz)
+  private[this] case class Foo(bar: String, baz: Int)
+  private[this] implicit val ord: Ordering[Foo] = Ordering[Int].on[Foo](_.baz)
 
-  private case class Quux(handle: String, data: SortedSet[String])
+  private[this] case class Foo2(bar: Option[String], baz: Int)
+  private[this] implicit val ord2: Ordering[Foo2] = Ordering[Int].on[Foo2](_.baz)
+
+  private[this] case class Quux(handle: String, data: SortedSet[String])
 
   override def tests(): Unit = {
+    test("select dynamic") {
+      val input = Ogdl(Vector(
+        ("scope",Ogdl(Vector(("DirectoryScope",Ogdl(Vector(("xxx",empty))))))),
+        ("permission",Ogdl(Vector(
+          ("id",Ogdl(Vector(("permission.name1:target1",empty)))),
+          ("action",Ogdl(Vector(("None",empty))))
+        )))
+      ))
+      val y = input.selectDynamic("permission")
+      //Ogdl(Vector((id,Ogdl(Vector((permission.name1:target1,empty)))), (action,Ogdl(Vector((None,empty))))))
+      val x = y.values.head._2()
+      //println(x)
+      x
+    }.assert(_ == empty)
+
     test("string") {
       val input: String = "Hello World!"
       Try(Ogdl(input))
     }.assert(_ == Success(Ogdl(Vector(("Hello World!", empty)))))
+
+    test("option") {
+      val input: Option[Boolean] = Some(false)
+      Try(Ogdl(input))
+    }.assert(_ == Success(Ogdl(Vector(("Some",Ogdl(Vector(("false",empty))))))))
 
     test("case class") {
       val input = Foo(bar = "1", baz = 2)
@@ -48,13 +71,21 @@ object OgdlWriterTest extends TestApp {
       val input = List("3", "2", "1")
       Try{Ogdl(input)}
     }.assert(_ == Success(
-      Ogdl(Vector(("3",Ogdl(Vector(("3",empty)))), ("2",Ogdl(Vector(("2",empty)))), ("1",Ogdl(Vector(("1",empty))))))
+      Ogdl(Vector(
+        ("3",Ogdl(Vector(("3",empty)))),
+        ("2",Ogdl(Vector(("2",empty)))),
+        ("1",Ogdl(Vector(("1",empty))))
+      ))
     ))
 
     test("sorted set of integers") {
       val input: SortedSet[Int] = TreeSet(1, 2, 3)
       Try{Ogdl(input)}
-    }.assert(_ == Success(Ogdl(Vector(("1",Ogdl(Vector(("1",empty)))), ("2",Ogdl(Vector(("2",empty)))), ("3",Ogdl(Vector(("3",empty))))))))
+    }.assert(_ == Success(Ogdl(Vector(
+      ("1",Ogdl(Vector(("1",empty)))),
+      ("2",Ogdl(Vector(("2",empty)))),
+      ("3",Ogdl(Vector(("3",empty))))
+    ))))
 
     test("sorted set of case classes") {
       implicit val index: Index[Foo] = FieldIndex("bar")
@@ -64,6 +95,17 @@ object OgdlWriterTest extends TestApp {
       ("B",Ogdl(Vector(("baz",Ogdl(Vector(("1",empty))))))),
       ("A",Ogdl(Vector(("baz",Ogdl(Vector(("2",empty))))))),
       ("B",Ogdl(Vector(("baz",Ogdl(Vector(("3",empty)))))))
+    ))))
+
+    test("sorted set of case classes 2") {
+      implicit val index: Index[Foo2] = FieldIndex("bar")
+      val input: SortedSet[Foo2] = TreeSet(Foo2(bar = Some("A"), baz = 2), Foo2(bar = Some("B"), baz = 3), Foo2(bar = None, baz = 1))
+      Try{Ogdl(input)}
+      //FIXME value of the option is lost
+    }.assert(_ == Success(Ogdl(Vector(
+      ("None",Ogdl(Vector(("baz",Ogdl(Vector(("1",empty))))))),
+      ("Some",Ogdl(Vector(("baz",Ogdl(Vector(("2",empty))))))),
+      ("Some",Ogdl(Vector(("baz",Ogdl(Vector(("3",empty)))))))
     ))))
 
     test("case class with a sorted set") {
